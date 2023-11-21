@@ -1,0 +1,78 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Initialize Workspace') {
+            steps {
+                deleteDir() // Deletes the workspace
+            }
+        }
+
+        stage('Clone Repository') {
+            steps {
+                script {
+                    // Clone the repository on a specific branch
+                    checkout([$class: 'GitSCM', branches: [[name: 'your-specific-branch']], userRemoteConfigs: [[url: 'https://your.git.repository/url.git']]])
+                }
+            }
+        }
+
+        stage('Run PowerShell Commands') {
+            steps {
+                script {
+                    // Run your PowerShell commands
+                    powershell '''
+                        # PowerShell command 1
+                        Write-Host "Running PowerShell Command 1"
+
+                        # PowerShell command 2
+                        Write-Host "Running PowerShell Command 2"
+                    '''
+                }
+            }
+        }
+
+        stage('Upload to S3') {
+            steps {
+                script {
+                    try {
+                        // Assuming you have the AWS S3 plugin installed
+                        awsS3Upload(bucket: 'your-s3-bucket-name', includePathPattern: '**/*.zip', workingDir: './')
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        error("Failed to upload to S3: ${e.message}")
+                    }
+                }
+            }
+        }
+
+        stage('Run More PowerShell Commands') {
+            steps {
+                script {
+                    // Run additional PowerShell commands
+                    powershell '''
+                        # PowerShell command 3
+                        Write-Host "Running PowerShell Command 3"
+
+                        # PowerShell command 4
+                        Write-Host "Running PowerShell Command 4"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build succeeded!'
+        }
+
+        failure {
+            echo 'Build failed. Some steps may not have executed.'
+        }
+    }
+}
+
+/* Make sure to replace placeholders like 'your-specific-branch', 'https://your.git.repository/url.git', and 'your-s3-bucket-name' with your actual branch, Git repository URL, and AWS S3 bucket name. Additionally, ensure that you have the necessary plugins installed, such as the Git plugin and AWS S3 plugin.
+
+Adjust the PowerShell commands within the script blocks according to your specific requirements. */
